@@ -31,10 +31,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     if (lecture) {
                         const studentName = document.getElementById('std_name').value.trim();
-                        const LinkEle= document.createElement("a");
-                        LinkEle.href=lecture.quizLink;
-                        LinkEle.innerHTML="Go to quiz"
-                        document.body.appendChild(LinkEle)
 
                         if (!studentName) {
                             alert("Please enter your name!");
@@ -55,6 +51,14 @@ document.addEventListener("DOMContentLoaded", function () {
                                 attendedStudents: [...lecture.attendedStudents, { name: studentName, device: deviceFingerprint }] 
                             })
                         }).then(() => {
+                            const LinkEle=document.getElementById("quiz_link");
+                            if(!LinkEle){
+                            const LinkEle= document.createElement("a");
+                        LinkEle.href=lecture.quizLink;
+                        LinkEle.id="quiz_link"
+                        LinkEle.innerHTML="Go to quiz"
+                        document.body.appendChild(LinkEle)
+                            }
                             alert("Attendance Recorded!");
                         });
                     } else {
