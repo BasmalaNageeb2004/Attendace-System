@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h2>Welcome, Teacher</h2>
+    <button onclick="openModal()">Add Lecture</button>
+    
+    <h3>Lectures</h3>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>QR Code</th>
+                <th>Quiz Link</th>
+                <th>Student Name</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="lectureTables"></tbody>
+    </table>
+
+    <!-- Modal for adding lecture -->
+    <div id="lectureModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Add New Lecture</h2>
+            <input type="text" id="lectureTitle" placeholder="Enter Lecture Title">
+            <input type="text" id="quizLink" placeholder="Enter Quiz Link (optional)">
+            <button onclick="addLecture()">Save</button>
+        </div>
+    </div>
+    
+    <script>
+        function openModal() {
+            document.getElementById('lectureModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('lectureModal').style.display = 'none';
+        }
+
+        async function addLecture() {
+            const title = document.getElementById('lectureTitle').value;
+            const quizLink = document.getElementById('quizLink').value;
+            if (!title) return alert("Please enter a lecture title.");
+            
+            const uniqueCode = Math.random().toString(36).substr(2, 8);
+            await fetch('https://67db7fd71fd9e43fe474beb2.mockapi.io/lectures', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, qrCode: uniqueCode, quizLink, attendedStudents: [] })
+            });
+            
+            closeModal();
+            loadLectures();
+        }
+        
+        async function loadLectures() {
+            const response = await fetch('https://67db7fd71fd9e43fe474beb2.mockapi.io/lectures');
+            const lectures = await response.json();
+            
+            const tableBody = document.getElementById('lectureTables');
+            tableBody.innerHTML = '';
+            
+            lectures.forEach(lecture => {
+                const rowSpan = Math.max(1, lecture.attendedStudents.length);
+                
+                const firstRow = document.createElement('tr');
+                firstRow.innerHTML = `
+                    <td rowspan="${rowSpan}">${lecture.title}</td>
+                    <td rowspan="${rowSpan}"><img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${lecture.qrCode}"/></td>
+                    <td rowspan="${rowSpan}">${lecture.quizLink ? `<a href="${lecture.quizLink}" target="_blank">Open Quiz</a>` : 'No quiz'}</td>
+                    <td>${lecture.attendedStudents.length > 0 ? lecture.attendedStudents[0].name : 'No attendance yet'}</td>
+                    <td rowspan="${rowSpan}"><button onclick="deleteLecture(${lecture.id})">Delete</button></td>
+                `;
+                tableBody.appendChild(firstRow);
+                
+                for (let i = 1; i < lecture.attendedStudents.length; i++) {
+                    const studentRow = document.createElement('tr');
+                    studentRow.innerHTML = `<td>${lecture.attendedStudents[i].name}</td>`;
+                    tableBody.appendChild(studentRow);
+                }
+            });
+        }
+        
+        async function deleteLecture(id) {
+            await fetch(`https://67db7fd71fd9e43fe474beb2.mockapi.io/lectures/${id}`, { method: 'DELETE' });
+            loadLectures();
+        }
+        
+        document.addEventListener("DOMContentLoaded", loadLectures);
+    </script>
+    
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .modal-content {
+            background-color: #1e1e1e;
+            color: white;
+            margin: 15% auto;
+            padding: 20px;
+            width: 40%;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            text-align: center;
+        }
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            cursor: pointer;
+        }
+    </style>
+</body>
+</html>
